@@ -1,0 +1,26 @@
+﻿☑ Fusée débute avec vitesse nulle et à une certaine distance du sol
+☑ Fusée commence à accélérer immédiatement vers le bas sous l'effet de la gravité
+
+☑ Joueur contrôle réacteur principal et propulseurs latéraux
+
+☒ Victoire si : fusée posée perpendiculairement au sol, sur une surface horizontale et régulière, à faible vitesse
+
+☒ Défaite si : zone non horizontale/plane, fusée non verticale, vitesse trop élevée
+
+☒ Carburant limité
+
+☒ Menu permettant de choisir les paramètres du jeu (vitesse maximum d'alunissage, consommation de carburant, force de le gravité, puissance des propulseurs)
+
+☑ Mouvement de la fusée "réalistes", avec prise en compte des vecteurs vitesse/accélération et l'inertie
+
+
+3 degrés de complexité : 
+☑ - propulseur principal dirigé vers le haut uniquement
+☒ - propulseurs latéraux sans rotation
+☑ - propulseurs latéraux avec rotation
+
+☒ Génération aléatoire du terrain, garantissant une surface d'atterissage viable
+
+☒ Interface permettant de démarrer le jeu, recommencer en cas d'échec ou de réussite, et permettant de quitter le jeu
+
+☒ Informations devant être affichées au joueur : vecteur vitesse de la fusée, altitude, quantité de carburant restante
