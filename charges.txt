@@ -7,7 +7,7 @@
 
 ☒ Défaite si : zone non horizontale/plane, fusée non verticale, vitesse trop élevée
 
-☒ Carburant limité
+☑ Carburant limité
 
 ☒ Menu permettant de choisir les paramètres du jeu (vitesse maximum d'alunissage, consommation de carburant, force de le gravité, puissance des propulseurs)
 

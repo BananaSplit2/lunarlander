@@ -9,7 +9,7 @@ from time import sleep
 # Constantes
 VITESSE_MAX = 6
 VITESSE_ANG_MAX = 5
-FRAMERATE = 60
+FRAMERATE = 30
 
 def vers_polaire(vecteur):
     """Convertit coordonnées cartésiennes en coordonnées polaires""" 
@@ -28,29 +28,32 @@ def affiche_fusee(position, angle):
     """
     x0, y0 = position
 
-    x1 = cos(radians(-angle) - atan(1/2)) * hypot(40, 20) / 2
-    y1 = sin(radians(-angle) - atan(1/2)) * hypot(40, 20) / 2
+    cercle(x0, y0, 15, remplissage='light blue')
+    cercle(x0 - 15*cos(radians(angle)), y0 + 15*sin(radians(angle)), 3, remplissage='black')
 
-    x2 = cos(radians(-angle) + atan(1/2)) * hypot(40, 20) / 2
-    y2 = sin(radians(-angle) + atan(1/2)) * hypot(40, 20) / 2
+def affiche_terrain(terrain):
+    """Affiche le terrain"""
+    polygone(terrain+[(1200, 800), (0, 800)], remplissage='brown')
 
-    poly = [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
-    
-    polygone(poly, remplissage='light blue')
+def affiche_infos():
+    """Affiche une barre en bas de l'écran affichant un certain nombre d'informations"""
+    rectangle(0, 0, 1200, 100, remplissage='black')
 
-def affiche_sol():
-    """Affiche un sol plat"""
-    rectangle(0, 800, 900, 900, remplissage='grey')
+def gen_terrain():
+    """Génération d'un terrain plat
+    :return list:
+    """
+    terrain = []
+    for i in range(61):
+        terrain.append((i*20, 700-cos(i)*12))
+    return terrain
 
-def update_propulsion(touche, angle):
+def update_propulsion(angle):
     """Met à jour le vecteur accélération de la propulsion principale de
     la fusée
-    :param touche: bool, la touche de propulsion est-elle appuyée
     :param angle: float, angle de la fusée
     """
-    if touche:
-        return (0.1 * cos(radians(angle))), 0.1 * sin(radians(angle))
-    return (0, 0)
+    return (0.2 * cos(radians(angle))), 0.2 * sin(radians(angle))
 
 def update_vitesse(fusee, vitesse, gravite, propulsion):
     """Met à jour le vecteur vitesse de la fusée
@@ -82,9 +85,9 @@ def update_acceleration_angulaire(touche):
     :return float: accélération angulaire
     """
     if touche == 'Left':
-        return 0.1
+        return 0.2
     elif touche == 'Right':
-        return -0.1
+        return -0.2
     else:
         return 0
 
@@ -107,9 +110,9 @@ def update_vitesse_angulaire(vitesse_angulaire, acceleration):
     if fabs(vitesse_angulaire) < 1:
         return 0
     elif vitesse_angulaire < 0:
-        return vitesse_angulaire + 0.1
+        return vitesse_angulaire + 0.2
     else:
-        return vitesse_angulaire - 0.1
+        return vitesse_angulaire - 0.2
 
 def update_angle(angle, vitesse_angulaire):
     """Met à jour l'angle de la fusée
@@ -131,14 +134,14 @@ def move_fusee(fusee, vitesse):
     if not check_gnd_collision(fusee, vitesse):
         return (x0 + vx, y0 - vy)
     else:
-        return (x0 + vx, 800 - 20)
+        return (x0 + vx, 700 - 20)
 
 def check_gnd_collision(fusee, vitesse):
     """Prototype. Vérifie une éventuelle collision avec un sol plat fixe"""
     x0, y0 = fusee
     vx, vy = vitesse
 
-    if y0 + 20 - vy > 800:
+    if y0 + 20 - vy > 700:
         return True
     return False
 
@@ -147,14 +150,14 @@ def check_on_ground(fusee, vitesse):
     x0, y0 = fusee
     vx, vy = vitesse
     
-    if y0 + 21 >= 800:
+    if y0 + 21 >= 700:
         return True
     return False
 
 if __name__ == '__main__':
 
     # Création de la fenêtre
-    cree_fenetre(900, 900)
+    cree_fenetre(1200, 800)
 
     # Initialisation des variables principales
     fusee_pos = (200, 0)    # Position de la fusee (x, y)
@@ -162,18 +165,23 @@ if __name__ == '__main__':
     fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
     fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
     fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
-    gravite = (0, -0.03)    # Vecteur accélération de la gravité (x, y)
+    gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
     propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
+    carburant = 5 * 30      # Quantité de carburant de la fusée
+    terrain = gen_terrain()
 
     jouer = True
+
     
     # Boucle principale du jeu
     while jouer:
         # Affichages
+
         efface_tout()
         
-        affiche_sol()
+        affiche_infos()
         affiche_fusee(fusee_pos, fusee_angle)
+        affiche_terrain(terrain)
 
         mise_a_jour()
 
@@ -184,7 +192,11 @@ if __name__ == '__main__':
         if ev_type == 'Quitte':
             jouer = False
 
-        propulsion = update_propulsion(touche_pressee('g'), fusee_angle)
+        propulsion = (0, 0)
+        if touche_pressee('g') and carburant > 0:
+            propulsion = update_propulsion(fusee_angle)
+            carburant -= 1
+            print(carburant)
 
         if touche_pressee('Left') and touche_pressee('Right'):
             fusee_accel_angulaire = 0
