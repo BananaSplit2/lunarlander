@@ -14,3 +14,14 @@ def affiche_fusee(position, angle):
     poly = [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
     
     polygone(poly, remplissage='light blue')
+
+
+def affiche_fusee(position, angle):
+    """Affiche un rectangle représentant la fusée
+    :param position: tuple, représentant la position x, y de la fusée
+    :param angle: float, représentant l'angle actuel de la fusée
+    """
+    x0, y0 = position
+
+    cercle(x0, y0, 15, remplissage='light blue')
+    cercle(x0 - 15*cos(radians(angle)), y0 + 15*sin(radians(angle)), 3, remplissage='black')

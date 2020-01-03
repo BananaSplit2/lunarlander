@@ -25,11 +25,20 @@ def affiche_fusee(position, angle):
     """Affiche un rectangle représentant la fusée
     :param position: tuple, représentant la position x, y de la fusée
     :param angle: float, représentant l'angle actuel de la fusée
-    """
-    x0, y0 = position
+    """   
+    polygone(get_coords_fusee(position, angle), remplissage='light blue')
 
-    cercle(x0, y0, 15, remplissage='light blue')
-    cercle(x0 - 15*cos(radians(angle)), y0 + 15*sin(radians(angle)), 3, remplissage='black')
+def get_coords_fusee(position, angle):
+    x0, y0 = position
+    
+    x1 = cos(radians(-angle) - atan(1/2)) * hypot(40, 20) / 2
+    y1 = sin(radians(-angle) - atan(1/2)) * hypot(40, 20) / 2
+
+    x2 = cos(radians(-angle) + atan(1/2)) * hypot(40, 20) / 2
+    y2 = sin(radians(-angle) + atan(1/2)) * hypot(40, 20) / 2
+
+    return [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
+
 
 def affiche_terrain(terrain):
     """Affiche le terrain"""
@@ -45,7 +54,7 @@ def gen_terrain():
     """
     terrain = []
     for i in range(61):
-        terrain.append((i*20, 700-cos(i)*12))
+        terrain.append((i*20, 700))
     return terrain
 
 def update_propulsion(angle):
@@ -66,10 +75,6 @@ def update_vitesse(fusee, vitesse, gravite, propulsion):
     vx, vy = vitesse
     ax, ay = gravite
     px, py = propulsion
-
-    # Si la fusée touche le sol, elle s'arrête
-    if check_on_ground(fusee, vitesse):
-        return (0, 0)
     
     if hypot(vx + ax + px, vy + ay + py) <= VITESSE_MAX:
         return (vx + ax + px, vy + ay + py)
@@ -130,29 +135,71 @@ def move_fusee(fusee, vitesse):
     """
     x0, y0 = fusee
     vx, vy = vitesse
+    new_x, new_y = x0 + vx, y0 - vy
 
-    if not check_gnd_collision(fusee, vitesse):
-        return (x0 + vx, y0 - vy)
+    # Empêche la fusée sort de l'écran
+    if new_x <= 0:
+        new_x = 0
+    elif new_x >= 1200:
+        new_x = 1200
+
+    if new_y <= 100:
+        new_y = 100
+    
+    return (new_x, new_y)
+
+def segments_croise(seg1, seg2):
+    p1, p2 = seg1
+    p3, p4 = seg2
+
+    if p1[0]-p2[0] != 0:
+        a1 = (p1[1]-p2[1]) / (p1[0]-p2[0])
+        b1 = 1
+        c1 = p1[1] - a1 * p1[0]
     else:
-        return (x0 + vx, 700 - 20)
+        a1 = 1
+        b1 = 0
+        c1 = -p1[0]
 
-def check_gnd_collision(fusee, vitesse):
+    if p3[0]-p4[0] != 0:
+        a2 = (p3[1]-p4[1]) / (p3[0]-p4[0])
+        b2 = 1
+        c2 = p3[1] - a2 * p3[0]
+    else:
+        a2 = 1
+        b2 = 0
+        c2 = -p3[0]
+
+    if (a1 * p3[0] - b1 * p3[1] + b1) * (a1 * p4[0] - b2 * p4[1] + b1) <= 0:
+        return True
+    return False
+
+def check_gnd_collision(fusee, vitesse, angle, terrain):
     """Prototype. Vérifie une éventuelle collision avec un sol plat fixe"""
     x0, y0 = fusee
     vx, vy = vitesse
+    nx = x0 + vx
+    ny = y0 - vy
 
-    if y0 + 20 - vy > 700:
+    seg = cherche_segment_plus_proche(nx, terrain)
+    print(seg)
+
+    coords = get_coords_fusee(fusee, angle)
+    print(coords)
+
+    if segments_croise((coords[0], coords[1]), seg):
         return True
+    elif segments_croise((coords[1], coords[2]), seg):
+        return True
+    elif segments_croise((coords[2], coords[3]), seg):
+        return True
+    elif segments_croise((coords[3], coords[0]), seg):
+        return True
+
     return False
 
-def check_on_ground(fusee, vitesse):
-    """Prototype. Renvoie True si fusée sur le sol"""
-    x0, y0 = fusee
-    vx, vy = vitesse
-    
-    if y0 + 21 >= 700:
-        return True
-    return False
+def cherche_segment_plus_proche(x, terrain):
+    return (terrain[int(x)//20], terrain[int(x)//20+1])
 
 if __name__ == '__main__':
 
@@ -212,6 +259,9 @@ if __name__ == '__main__':
         fusee_angle = update_angle(fusee_angle, fusee_vit_angulaire)
         fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion)
         fusee_pos = move_fusee(fusee_pos, fusee_vit)
+
+        if check_gnd_collision(fusee_pos, fusee_vit, fusee_angle, terrain):
+            jouer = False
         
         sleep(1/FRAMERATE)
 
