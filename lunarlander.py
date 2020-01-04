@@ -53,7 +53,7 @@ def affiche_terrain(terrain, points):
     """Affiche le terrain
     :param terrain: liste de tuples
     :param points: bool, si True, affiche individuellement les points"""
-    polygone(terrain+[(1200, 800), (0, 800)], remplissage='grey')
+    polygone(terrain+[(1200, 800), (0, 800)], remplissage='light grey')
 
     if points:
         for x, y in terrain:
@@ -93,7 +93,7 @@ def affiche_vecteur_vitesse(vitesse, vitesse_max_alu):
     ligne(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2, tag='s')
 
     texte(100, 30, 'Vitesse', couleur='white', ancrage='w', taille=14, tag='s')
-    texte(100, 60, str(int(norme*360/VITESSE_MAX)), couleur='white', ancrage='w', taille=20, tag='s')
+    texte(100, 60, str(int(norme*180/VITESSE_MAX)), couleur='white', ancrage='w', taille=20, tag='s')
 
 def affiche_altitude(position, angle, terrain):
     """Affiche de l'altitude de la fusée dans la barre d'informations
