@@ -23,4 +23,4 @@
 
 ☑ Informations devant être affichées au joueur : vecteur vitesse de la fusée, altitude, quantité de carburant restante
 
-☒ Menu permettant de choisir les paramètres du jeu (vitesse maximum d'alunissage, consommation de carburant, force de le gravité, puissance des propulseurs)
+☑ Menu permettant de choisir les paramètres du jeu (vitesse maximum d'alunissage, consommation de carburant, force de le gravité, puissance des propulseurs)
