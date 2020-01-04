@@ -5,8 +5,8 @@ Prototype Lunar Lander
 from upemtk import *
 from math import *
 from time import sleep
-
-from generation_sol import cree_terrain
+from random import randint
+from operator import add
 
 # Constantes
 VITESSE_MAX = 6
@@ -47,22 +47,79 @@ def get_coords_fusee(position, angle):
     return [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
 
 
-def affiche_terrain(terrain):
-    """Affiche le terrain"""
+def affiche_terrain(terrain, points):
+    """Affiche le terrain
+    :param terrain: liste de tuples
+    :param points: bool, si True, affiche individuellement les points"""
     polygone(terrain+[(1200, 800), (0, 800)], remplissage='grey')
 
-def affiche_infos():
-    """Affiche une barre en bas de l'écran affichant un certain nombre d'informations"""
+    if points:
+        for x, y in terrain:
+            cercle(x, y, 5, remplissage='blue')
+
+def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max):
+    """Affiche une barre en bas de l'écran affichant un certain nombre d'informations
+    :param position: tuple, position x,y de la fusée
+    :param angle: float, angle de la fusée
+    :param vitesse: tuple, vecteur vitesse de la fusée
+    :param terrain: liste de tuples
+    :param carburant: float, carburant restant
+    :param carburant_max: float, carburant initial
+    """
     rectangle(0, 0, 1200, 100, remplissage='black')
 
-def gen_terrain():
-    """Génération d'un terrain plat
-    :return list:
+    affiche_vecteur_vitesse(vitesse)
+    affiche_altitude(position, angle, terrain)
+    affiche_carburant(carburant, carburant_max)
+
+def affiche_vecteur_vitesse(vitesse):
+    """Affichage du vecteur vitesse dans la barre d'informations
+    :param vitesse: tuple, vecteur vitesse de la fusée
     """
-    terrain = []
-    for i in range(61):
-        terrain.append((i*20, 700))
-    return terrain
+    vx, vy = vitesse
+    
+    cercle(50, 50, 40, couleur='white')
+    ligne(10, 50, 90, 50, couleur='white')
+    ligne(50, 10, 50, 90, couleur='white')
+
+    norme = hypot(vx, vy)
+    longueur = 40*norme/VITESSE_MAX
+    vec_indic = vers_cartes((longueur, vers_polaire(vitesse)[1]))
+
+    fleche(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2)
+    ligne(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2)
+
+    texte(100, 30, 'Vitesse', couleur='white', ancrage='w', taille=14)
+    texte(100, 60, str(int(norme*200/VITESSE_MAX)), couleur='white', ancrage='w', taille=20)
+
+def affiche_altitude(position, angle, terrain):
+    """Affiche de l'altitude de la fusée dans la barre d'informations
+    :param position: tuple, position x, y de la fusée
+    :param angle: float, angle de la fusée
+    :param terrain: liste de tuples
+    """
+    altitude = get_altitude(position, angle, terrain)
+    if altitude < 0:
+        altitude = 0
+
+    texte(200, 30, 'Altitude', couleur='white', ancrage='w', taille=14)
+    texte(200, 60, str(int(altitude)), couleur='white', ancrage='w', taille=20)
+
+def affiche_carburant(carburant, carburant_max):
+    """Affiche la quantité de carburant restante
+    :param carburant: float, carburant restant actuel
+    :param carburant_max: float, carburant initial
+    """
+    texte(360, 15, 'Carburant', ancrage='center', couleur='white', taille=14)
+    rectangle(350, 90, 370, 90-60*carburant/carburant_max, remplissage='red')
+    rectangle(350, 90, 370, 90-60, couleur='white')
+
+def affiche_explosion(position):
+    """Affiche une image d'explosion à la position indiquée
+    :param position: tuple, coordonnées x, y
+    """
+    x, y = position
+    image(x, y, 'resources/boom.gif')
 
 def update_propulsion(angle):
     """Met à jour le vecteur accélération de la propulsion principale de
@@ -108,6 +165,10 @@ def update_acceleration_angulaire(touche):
         return 0
 
 def update_propulsion_laterale(touche):
+    """Met à jour la propulsion laterale selon la touche pressée
+    :param touche: string; touche du clavier appuyée
+    :return float: vecteur accélération de la propulsion latérale
+    """
     if touche == 'Left':
         return (-0.2, 0)
     elif touche == 'Right':
@@ -228,7 +289,7 @@ def check_gnd_collision(fusee, angle, terrain):
             return True
 
     # Recherche d'une collision avec le segment à droite
-    if i < 60:
+    if i < 59:
         seg = (terrain[i+1], terrain[i+2])
         if segments_croise((coords[0], coords[1]), seg):
             return True
@@ -247,7 +308,9 @@ def cherche_segment_plus_proche(x):
     :param x: float, position x de la fusée
     :return int:
     """
-    return int(x)//20
+    if x < 1200:
+        return int(x)//20
+    return 59
 
 def check_victoire(position, angle, vitesse, terrain):
     """Renvoie True si l'atterrissage est correct
@@ -257,7 +320,6 @@ def check_victoire(position, angle, vitesse, terrain):
     :param terrain: liste de tuples
     :return bool:
     """
-    x, y = position
     vx, vy = vitesse
     
     i = cherche_segment_plus_proche(position[0])
@@ -266,12 +328,8 @@ def check_victoire(position, angle, vitesse, terrain):
     x0, y0 = p1
     x1, y1 = p2
 
-    # Evalue la position y du sol directement sous la fusée
-    inter = fabs(x1-x)/fabs(x1-x0)*fabs(y0-y1)
-    y_sol = min(y0, y1)-inter
-
     # Evalue si la fusée est bien sur le sol
-    if y - y_sol < 25:
+    if get_altitude(position, angle, terrain) < 25:
         # Evalue si le sol est suffisamment plat
         if fabs(degrees(atan(fabs(y0-y1)/fabs(x0-x1)))) <= 5:
             # Evalue si la fusée est suffisament verticale
@@ -282,86 +340,234 @@ def check_victoire(position, angle, vitesse, terrain):
 
     return False
 
+def get_altitude(position, angle, terrain):
+    """Renvoie l'altitude de la fusée
+    :param position: tuple, coordonnées x,y de la fusée
+    :param angle: float, angle de la fusée
+    :terrain: liste de typles
+    :returns float:
+    """
+    x, y = position
+
+    i = cherche_segment_plus_proche(position[0])
+    sol = (terrain[i], terrain[i+1])
+    p1, p2 = sol
+    x0, y0 = p1
+    x1, y1 = p2
+
+    # Evalue la position y du sol directement sous la fusée
+    inter = fabs(x1-x)/fabs(x1-x0)*fabs(y0-y1)
+    y_sol = min(y0, y1)-inter
+
+    coords = get_coords_fusee(position, angle)
+    liste_y = []
+
+    for coord in coords:
+        liste_y.append(coord[1])
+
+    return y_sol-max(liste_y)
+
+def cree_terrain() :
+    x_base = 0
+    y_base = 750
+    points_terrain = []
+    points_terrain.append((x_base, y_base))
+    
+    
+    type_terrain = ['plat','colline','descendant','montant']
+    for i in range (12) :
+        x = randint(0,3) 
+        terrain = type_terrain[x]
+        if terrain == 'plat' :
+            for i in range (5) :
+                x = points_terrain[-1]
+                x = tuple(map(add, x, (20,0)))
+                points_terrain.append(x)
+                
+        elif terrain == 'colline' :
+            for i in range (3) :
+                x = points_terrain[-1]
+                
+                x = tuple(map(add, x, (20,-2)))
+                a, b = x
+                if b < 700 :
+                    pass
+                else :
+                    points_terrain.append(x)
+            for i in range (2) :
+                x = points_terrain[-1]
+                
+                x = tuple(map(add, x, (20,2)))
+                a, b = x
+                if b > 795 :
+                    pass
+                else :
+                    points_terrain.append(x)
+                
+        elif terrain == 'descendant' :
+            for i in range (5) :
+                x = points_terrain[-1]
+                
+                x = tuple(map(add, x, (20 ,5)))	
+                a, b = x
+                if b > 795 :
+                    pass
+                else :
+                    points_terrain.append(x)
+                
+        elif terrain == 'montant' :
+            for i in range (5) :
+                x = points_terrain[-1]
+                
+                x = tuple(map(add, x, (20,-5)))	
+                a, b = x
+                if b < 700 :
+                    pass
+                else :
+                    points_terrain.append(x)
+    print(len(points_terrain))
+    return points_terrain
+
+def is_bouton_clique(x1, y1, x2, y2, ev):
+    if x1 <= abscisse(ev) <= x2:
+        if y1 <= ordonnee(ev) <= y2:
+            return True
+    return False
+
+def ecran_titre():
+    image(0, 0, 'resources/title_screen.gif', ancrage='nw')
+
+    while True:
+        # Gestion des évènements/commandes
+        ev = attend_ev()
+        ev_type = type_ev(ev)
+
+        if ev_type == 'ClicGauche':
+            if is_bouton_clique(444, 414, 754, 498, ev):
+                return True
+            elif is_bouton_clique(445, 530, 754, 616, ev):
+                print('Options')
+        elif ev_type == 'Quitte':
+            return False
+
+def game_over(victoire):
+    if victoire:
+        image(600, 300, 'resources/alunissage.gif', ancrage='center')
+    else:
+        image(600, 300, 'resources/crash.gif', ancrage='center')
+
+    image(600, 500, 'resources/rejouer.gif', ancrage='center')
+    image(600, 600, 'resources/quitter.gif', ancrage='center')
+
+    while True:
+        # Gestion des évènements/commandes
+        ev = attend_ev()
+        ev_type = type_ev(ev)
+
+        if ev_type == 'ClicGauche':
+            if is_bouton_clique(445, 458, 755, 542, ev):
+                return True
+            if is_bouton_clique(445, 558, 755, 642, ev):
+                return False
+        elif ev_type == 'Quitte':
+            return False
+
 if __name__ == '__main__':
 
     # Création de la fenêtre
     cree_fenetre(1200, 800)
 
-    # Initialisation des variables principales
-    fusee_pos = (600, 150)    # Position de la fusee (x, y)
-    fusee_angle = 90        # Angle en degrés de la fusée
-    fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
-    fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
-    fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
-    gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
-    propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
-    prop_laterale = (0, 0)  # Vecteur accélération de la propulsion latérale (x, y)
-    carburant = 10 * 30     # Quantité de carburant de la fusée
-    terrain = gen_terrain() # Génération du terrain
-    mode = 'B'
-    
-    jouer = True
+    jouer = ecran_titre()
 
-    
-    # Boucle principale du jeu
+    # Boucle principale
     while jouer:
-        # Affichages
 
-        efface_tout()
+        # Initialisation des variables principales
+        fusee_pos = (600, 150)    # Position de la fusee (x, y)
+        fusee_angle = 90        # Angle en degrés de la fusée
+        fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
+        fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
+        fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
+        gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
+        propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
+        prop_laterale = (0, 0)  # Vecteur accélération de la propulsion latérale (x, y)
+        carburant_max = 5*30
+        carburant = carburant_max    # Quantité de carburant de la fusée
+        terrain = cree_terrain() # Génération du terrain
+        mode = 'A'
+        fenetre_fermee = False
+        aterri = False
+
         
-        affiche_infos()
-        affiche_fusee(fusee_pos, fusee_angle)
-        affiche_terrain(terrain)
+        # Boucle principale d'une partie
+        while not aterri:
+            # Affichages
 
-        mise_a_jour()
+            efface_tout()
+            
+            affiche_fusee(fusee_pos, fusee_angle)
+            affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max)
+            affiche_terrain(terrain, False)
 
-        # Gestion des évènements
-        ev = donne_ev()
-        ev_type = type_ev(ev)
+            # image(50, 50, 'resources/placeholder.gif')
 
-        if ev_type == 'Quitte':
-            ferme_fenetre()
-            break
+            mise_a_jour()
 
-        propulsion = (0, 0)
-        if touche_pressee('g') and carburant > 0:
-            propulsion = update_propulsion(fusee_angle)
-            carburant -= 1
+            # Gestion des évènements/commandes
+            ev = donne_ev()
+            ev_type = type_ev(ev)
 
-        if mode == 'A':
-            if touche_pressee('Left') and touche_pressee('Right'):
-                fusee_accel_angulaire = 0
-            elif touche_pressee('Left'):
-                fusee_accel_angulaire = update_acceleration_angulaire('Left')
-            elif touche_pressee('Right'):
-                fusee_accel_angulaire = update_acceleration_angulaire('Right')
-            else:
-                fusee_accel_angulaire = 0
+            if ev_type == 'Quitte':
+                fenetre_fermee = True
+                ferme_fenetre()
+                break
+
+            propulsion = (0, 0)
+            if touche_pressee('g') and carburant > 0:
+                propulsion = update_propulsion(fusee_angle)
+                carburant -= 1
+
+            if mode == 'A' and carburant > 0:
+                if touche_pressee('Left') and touche_pressee('Right'):
+                    fusee_accel_angulaire = 0
+                elif touche_pressee('Left'):
+                    fusee_accel_angulaire = update_acceleration_angulaire('Left')
+                    carburant -= 0.5
+                elif touche_pressee('Right'):
+                    fusee_accel_angulaire = update_acceleration_angulaire('Right')
+                    carburant -= 0.5
+                else:
+                    fusee_accel_angulaire = 0
+            elif carburant > 0:
+                if touche_pressee('Left') and touche_pressee('Right'):
+                    prop_laterale = (0, 0)
+                elif touche_pressee('Left'):
+                    prop_laterale = update_propulsion_laterale('Left')
+                    carburant -= 0.5
+                elif touche_pressee('Right'):
+                    prop_laterale = update_propulsion_laterale('Right')
+                    carburant -= 0.5
+                else:
+                    prop_laterale = (0, 0)
+            # Mécaniques du jeu
+            fusee_vit_angulaire = update_vitesse_angulaire(fusee_vit_angulaire, fusee_accel_angulaire)
+            fusee_angle = update_angle(fusee_angle, fusee_vit_angulaire)
+            fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion, prop_laterale)
+            fusee_pos = move_fusee(fusee_pos, fusee_vit)
+
+            if check_gnd_collision(fusee_pos, fusee_angle, terrain):
+                aterri = True
+            
+            sleep(1/FRAMERATE)
+
+        if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain):
+            print('Victoire')
+            jouer = game_over(True)
         else:
-            if touche_pressee('Left') and touche_pressee('Right'):
-                prop_laterale = (0, 0)
-            elif touche_pressee('Left'):
-                prop_laterale = update_propulsion_laterale('Left')
-            elif touche_pressee('Right'):
-                prop_laterale = update_propulsion_laterale('Right')
-            else:
-                prop_laterale = (0, 0)
-        # Mécaniques du jeu
-        fusee_vit_angulaire = update_vitesse_angulaire(fusee_vit_angulaire, fusee_accel_angulaire)
-        fusee_angle = update_angle(fusee_angle, fusee_vit_angulaire)
-        fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion, prop_laterale)
-        fusee_pos = move_fusee(fusee_pos, fusee_vit)
-
-        if check_gnd_collision(fusee_pos, fusee_angle, terrain):
-            jouer = False
-        
-        sleep(1/FRAMERATE)
-
-    if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain):
-        print('Victoire')
-    else:
-        print('Defeat')
-    attend_ev()
+            affiche_explosion(fusee_pos)
+            print('Defeat')
+            jouer = game_over(False)
 
     # Fermeture de la fenêtre
-    ferme_fenetre()
+    if not fenetre_fermee:
+        ferme_fenetre()

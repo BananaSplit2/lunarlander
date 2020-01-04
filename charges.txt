@@ -14,13 +14,13 @@
 
 3 degrés de complexité : 
 ☑ - propulseur principal dirigé vers le haut uniquement
-☒ - propulseurs latéraux sans rotation
+☑ - propulseurs latéraux sans rotation
 ☑ - propulseurs latéraux avec rotation
 
 ☒ Génération aléatoire du terrain, garantissant une surface d'atterissage viable
 
-☒ Interface permettant de démarrer le jeu, recommencer en cas d'échec ou de réussite, et permettant de quitter le jeu
+☑ Interface permettant de démarrer le jeu, recommencer en cas d'échec ou de réussite, et permettant de quitter le jeu
 
-☒ Informations devant être affichées au joueur : vecteur vitesse de la fusée, altitude, quantité de carburant restante
+☑ Informations devant être affichées au joueur : vecteur vitesse de la fusée, altitude, quantité de carburant restante
 
 ☒ Menu permettant de choisir les paramètres du jeu (vitesse maximum d'alunissage, consommation de carburant, force de le gravité, puissance des propulseurs)
