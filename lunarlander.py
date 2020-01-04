@@ -180,7 +180,7 @@ def segments_croise(seg1, seg2):
     return False
     
 def check_gnd_collision(fusee, angle, terrain):
-    """Recherche une collision entre la fusée et le terrain
+    """Renvoie True en cas de collision entre la fusée et le terrain
     :param fusee: tuple, position x,y de la fusée
     :param angle: float, angle de la fusée
     :param terrain: liste de tuples
@@ -238,7 +238,7 @@ def cherche_segment_plus_proche(x):
     return int(x)//20
 
 def check_victoire(position, angle, vitesse, terrain):
-    """Evalue si l'atterrissage est correct
+    """Renvoie True si l'atterrissage est correct
     :param position: tuple, position x, y de la fusée
     :param angle: float, angle de la fusée
     :param vitesse: tuple, vecteur vitesse de la fusée
@@ -254,12 +254,17 @@ def check_victoire(position, angle, vitesse, terrain):
     x0, y0 = p1
     x1, y1 = p2
 
+    # Evalue la position y du sol directement sous la fusée
     inter = fabs(x1-x)/fabs(x1-x0)*fabs(y0-y1)
     y_sol = min(y0, y1)-inter
 
+    # Evalue si la fusée est bien sur le sol
     if y - y_sol < 25:
+        # Evalue si le sol est suffisamment plat
         if fabs(degrees(atan(fabs(y0-y1)/fabs(x0-x1)))) <= 5:
+            # Evalue si la fusée est suffisament verticale
             if fabs(angle-90) <= 5:
+                # Evalue si la vitesse de la fusée est suffisament faible
                 if hypot(vx, vy) < 2:
                     return True
 
@@ -280,6 +285,7 @@ if __name__ == '__main__':
     propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
     carburant = 10 * 30     # Quantité de carburant de la fusée
     terrain = gen_terrain() # Génération du terrain
+    mode = 'A'
     
     jouer = True
 
@@ -309,14 +315,24 @@ if __name__ == '__main__':
             propulsion = update_propulsion(fusee_angle)
             carburant -= 1
 
-        if touche_pressee('Left') and touche_pressee('Right'):
-            fusee_accel_angulaire = 0
-        elif touche_pressee('Left'):
-            fusee_accel_angulaire = update_acceleration_angulaire('Left')
-        elif touche_pressee('Right'):
-            fusee_accel_angulaire = update_acceleration_angulaire('Right')
+        if mode == 'A':
+            if touche_pressee('Left') and touche_pressee('Right'):
+                fusee_accel_angulaire = 0
+            elif touche_pressee('Left'):
+                fusee_accel_angulaire = update_acceleration_angulaire('Left')
+            elif touche_pressee('Right'):
+                fusee_accel_angulaire = update_acceleration_angulaire('Right')
+            else:
+                fusee_accel_angulaire = 0
         else:
-            fusee_accel_angulaire = 0
+            if touche_pressee('Left') and touche_pressee('Right'):
+                fusee_accel_angulaire = 0
+            elif touche_pressee('Left'):
+                fusee_accel_angulaire = update_acceleration_angulaire('Left')
+            elif touche_pressee('Right'):
+                fusee_accel_angulaire = update_acceleration_angulaire('Right')
+            else:
+                fusee_accel_angulaire = 0
 
         # Mécaniques du jeu
         fusee_vit_angulaire = update_vitesse_angulaire(fusee_vit_angulaire, fusee_accel_angulaire)
