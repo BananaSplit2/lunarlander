@@ -79,6 +79,7 @@ def affiche_vecteur_vitesse(vitesse):
     vx, vy = vitesse
     
     cercle(50, 50, 40, couleur='white')
+    cercle(50, 50, 2*40/6, remplissage='green')
     ligne(10, 50, 90, 50, couleur='white')
     ligne(50, 10, 50, 90, couleur='white')
 
@@ -483,7 +484,7 @@ if __name__ == '__main__':
     while jouer:
 
         # Initialisation des variables principales
-        fusee_pos = (600, 150)    # Position de la fusee (x, y)
+        fusee_pos = (600, 150)  # Position de la fusee (x, y)
         fusee_angle = 90        # Angle en degrés de la fusée
         fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
         fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
@@ -569,5 +570,4 @@ if __name__ == '__main__':
             jouer = game_over(False)
 
     # Fermeture de la fenêtre
-    if not fenetre_fermee:
-        ferme_fenetre()
+    ferme_fenetre()
