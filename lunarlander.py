@@ -71,7 +71,7 @@ def update_propulsion(angle):
     """
     return (0.2 * cos(radians(angle))), 0.2 * sin(radians(angle))
 
-def update_vitesse(fusee, vitesse, gravite, propulsion):
+def update_vitesse(fusee, vitesse, gravite, propulsion, prop_laterale):
     """Met à jour le vecteur vitesse de la fusée
     :param fusee: tuple, position x, y de la fusée
     :param vitesse: tuple, vecteur vitesse de la fusée
@@ -82,14 +82,18 @@ def update_vitesse(fusee, vitesse, gravite, propulsion):
     vx, vy = vitesse
     ax, ay = gravite
     px, py = propulsion
+    plx, ply = prop_laterale
+
+    somme_x = vx + ax + px + plx
+    somme_y = vy + ay + py + ply
     
-    if hypot(vx + ax + px, vy + ay + py) <= VITESSE_MAX:
-        return (vx + ax + px, vy + ay + py)
+    if hypot(somme_x, somme_y) <= VITESSE_MAX:
+        return (somme_x, somme_y)
     else:
         # Si la vitesse maximale est atteinte, on passe par les coordonnées
         # polaire pour correctement mettre à jour l'angle du vecteur tout en
         # fixant la norme à la vitesse maximale
-        return vers_cartes((VITESSE_MAX, vers_polaire((vx + ax + px, vy + ay + py))[1]))
+        return vers_cartes((VITESSE_MAX, vers_polaire((somme_x, somme_y))[1]))
 
 def update_acceleration_angulaire(touche):
     """Met à jour l'accélération angulaire selon la touche pressée
@@ -100,6 +104,14 @@ def update_acceleration_angulaire(touche):
         return 0.2
     elif touche == 'Right':
         return -0.2
+    else:
+        return 0
+
+def update_propulsion_laterale(touche):
+    if touche == 'Left':
+        return (-0.2, 0)
+    elif touche == 'Right':
+        return (0.2, 0)
     else:
         return 0
 
@@ -283,9 +295,10 @@ if __name__ == '__main__':
     fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
     gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
     propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
+    prop_laterale = (0, 0)  # Vecteur accélération de la propulsion latérale (x, y)
     carburant = 10 * 30     # Quantité de carburant de la fusée
     terrain = gen_terrain() # Génération du terrain
-    mode = 'A'
+    mode = 'B'
     
     jouer = True
 
@@ -326,18 +339,17 @@ if __name__ == '__main__':
                 fusee_accel_angulaire = 0
         else:
             if touche_pressee('Left') and touche_pressee('Right'):
-                fusee_accel_angulaire = 0
+                prop_laterale = (0, 0)
             elif touche_pressee('Left'):
-                fusee_accel_angulaire = update_acceleration_angulaire('Left')
+                prop_laterale = update_propulsion_laterale('Left')
             elif touche_pressee('Right'):
-                fusee_accel_angulaire = update_acceleration_angulaire('Right')
+                prop_laterale = update_propulsion_laterale('Right')
             else:
-                fusee_accel_angulaire = 0
-
+                prop_laterale = (0, 0)
         # Mécaniques du jeu
         fusee_vit_angulaire = update_vitesse_angulaire(fusee_vit_angulaire, fusee_accel_angulaire)
         fusee_angle = update_angle(fusee_angle, fusee_vit_angulaire)
-        fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion)
+        fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion, prop_laterale)
         fusee_pos = move_fusee(fusee_pos, fusee_vit)
 
         if check_gnd_collision(fusee_pos, fusee_angle, terrain):
