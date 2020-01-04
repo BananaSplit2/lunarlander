@@ -28,7 +28,7 @@ def affiche_fusee(position, angle):
     :param position: tuple, représentant la position x, y de la fusée
     :param angle: float, représentant l'angle actuel de la fusée
     """   
-    polygone(get_coords_fusee(position, angle), remplissage='light blue')
+    polygone(get_coords_fusee(position, angle), remplissage='light blue', tag='s')
 
 def get_coords_fusee(position, angle):
     """Renvoie les coordonnées des 4 coins de la fusée
@@ -46,6 +46,8 @@ def get_coords_fusee(position, angle):
 
     return [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
 
+def affiche_fond():
+    image(0, 0, 'resources/bg.gif', ancrage='nw')
 
 def affiche_terrain(terrain, points):
     """Affiche le terrain
@@ -57,7 +59,7 @@ def affiche_terrain(terrain, points):
         for x, y in terrain:
             cercle(x, y, 5, remplissage='blue')
 
-def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max):
+def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max, vitesse_max_alu):
     """Affiche une barre en bas de l'écran affichant un certain nombre d'informations
     :param position: tuple, position x,y de la fusée
     :param angle: float, angle de la fusée
@@ -68,30 +70,30 @@ def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max):
     """
     rectangle(0, 0, 1200, 100, remplissage='black')
 
-    affiche_vecteur_vitesse(vitesse)
+    affiche_vecteur_vitesse(vitesse, vitesse_max_alu)
     affiche_altitude(position, angle, terrain)
     affiche_carburant(carburant, carburant_max)
 
-def affiche_vecteur_vitesse(vitesse):
+def affiche_vecteur_vitesse(vitesse, vitesse_max_alu):
     """Affichage du vecteur vitesse dans la barre d'informations
     :param vitesse: tuple, vecteur vitesse de la fusée
     """
     vx, vy = vitesse
     
-    cercle(50, 50, 40, couleur='white')
-    cercle(50, 50, 2*40/6, remplissage='green')
-    ligne(10, 50, 90, 50, couleur='white')
-    ligne(50, 10, 50, 90, couleur='white')
+    cercle(50, 50, 40, couleur='white', tag='s')
+    cercle(50, 50, vitesse_max_alu*40/6, remplissage='green', tag='s')
+    ligne(10, 50, 90, 50, couleur='white', tag='s')
+    ligne(50, 10, 50, 90, couleur='white', tag='s')
 
     norme = hypot(vx, vy)
     longueur = 40*norme/VITESSE_MAX
     vec_indic = vers_cartes((longueur, vers_polaire(vitesse)[1]))
 
-    fleche(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2)
-    ligne(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2)
+    fleche(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2, tag='s')
+    ligne(50, 50, 50+vec_indic[0], 50-vec_indic[1], couleur='red', epaisseur=2, tag='s')
 
-    texte(100, 30, 'Vitesse', couleur='white', ancrage='w', taille=14)
-    texte(100, 60, str(int(norme*200/VITESSE_MAX)), couleur='white', ancrage='w', taille=20)
+    texte(100, 30, 'Vitesse', couleur='white', ancrage='w', taille=14, tag='s')
+    texte(100, 60, str(int(norme*360/VITESSE_MAX)), couleur='white', ancrage='w', taille=20, tag='s')
 
 def affiche_altitude(position, angle, terrain):
     """Affiche de l'altitude de la fusée dans la barre d'informations
@@ -103,17 +105,17 @@ def affiche_altitude(position, angle, terrain):
     if altitude < 0:
         altitude = 0
 
-    texte(200, 30, 'Altitude', couleur='white', ancrage='w', taille=14)
-    texte(200, 60, str(int(altitude)), couleur='white', ancrage='w', taille=20)
+    texte(200, 30, 'Altitude', couleur='white', ancrage='w', taille=14, tag='s')
+    texte(200, 60, str(int(altitude)), couleur='white', ancrage='w', taille=20, tag='s')
 
 def affiche_carburant(carburant, carburant_max):
     """Affiche la quantité de carburant restante
     :param carburant: float, carburant restant actuel
     :param carburant_max: float, carburant initial
     """
-    texte(360, 15, 'Carburant', ancrage='center', couleur='white', taille=14)
-    rectangle(350, 90, 370, 90-60*carburant/carburant_max, remplissage='red')
-    rectangle(350, 90, 370, 90-60, couleur='white')
+    texte(360, 15, 'Carburant', ancrage='center', couleur='white', taille=14, tag='s')
+    rectangle(350, 90, 370, 90-60*carburant/carburant_max, remplissage='red', tag='s')
+    rectangle(350, 90, 370, 90-60, couleur='white', tag='s')
 
 def affiche_explosion(position):
     """Affiche une image d'explosion à la position indiquée
@@ -122,12 +124,14 @@ def affiche_explosion(position):
     x, y = position
     image(x, y, 'resources/boom.gif')
 
-def update_propulsion(angle):
+def update_propulsion(angle, puiss):
     """Met à jour le vecteur accélération de la propulsion principale de
     la fusée
     :param angle: float, angle de la fusée
+    :param puiss: float, ratio de la puissance du réacteur principale
+    :return value: tuple, vecteur accélération de la propulsion
     """
-    return (0.2 * cos(radians(angle))), 0.2 * sin(radians(angle))
+    return (0.2 * puiss * cos(radians(angle))), 0.2 * puiss * sin(radians(angle))
 
 def update_vitesse(fusee, vitesse, gravite, propulsion, prop_laterale):
     """Met à jour le vecteur vitesse de la fusée
@@ -153,27 +157,29 @@ def update_vitesse(fusee, vitesse, gravite, propulsion, prop_laterale):
         # fixant la norme à la vitesse maximale
         return vers_cartes((VITESSE_MAX, vers_polaire((somme_x, somme_y))[1]))
 
-def update_acceleration_angulaire(touche):
+def update_acceleration_angulaire(touche, puiss):
     """Met à jour l'accélération angulaire selon la touche pressée
     :param touche: string, touche du clavier appuyée
+    :param puiss: float, ratio de la puissance des réacteurx latéraux
     :return float: accélération angulaire
     """
     if touche == 'Left':
-        return 0.2
+        return 0.2*puiss
     elif touche == 'Right':
-        return -0.2
+        return -0.2*puiss
     else:
         return 0
 
-def update_propulsion_laterale(touche):
+def update_propulsion_laterale(touche, puiss):
     """Met à jour la propulsion laterale selon la touche pressée
-    :param touche: string; touche du clavier appuyée
+    :param touche: string, touche du clavier appuyée
+    :param puiss: float, ratio de la puissance des réacteurs latéraux
     :return float: vecteur accélération de la propulsion latérale
     """
     if touche == 'Left':
-        return (-0.2, 0)
+        return (-0.2*puiss, 0)
     elif touche == 'Right':
-        return (0.2, 0)
+        return (0.2*puiss, 0)
     else:
         return 0
 
@@ -313,7 +319,7 @@ def cherche_segment_plus_proche(x):
         return int(x)//20
     return 59
 
-def check_victoire(position, angle, vitesse, terrain):
+def check_victoire(position, angle, vitesse, terrain, vitesse_max_alu):
     """Renvoie True si l'atterrissage est correct
     :param position: tuple, position x, y de la fusée
     :param angle: float, angle de la fusée
@@ -336,7 +342,7 @@ def check_victoire(position, angle, vitesse, terrain):
             # Evalue si la fusée est suffisament verticale
             if fabs(angle-90) <= 5:
                 # Evalue si la vitesse de la fusée est suffisament faible
-                if hypot(vx, vy) < 2:
+                if hypot(vx, vy) < vitesse_max_alu:
                     return True
 
     return False
@@ -436,6 +442,9 @@ def is_bouton_clique(x1, y1, x2, y2, ev):
     return False
 
 def ecran_titre():
+    parametres = [2, 1, -0.06, 1]
+    mode = 'A'
+    quitter = False
     image(0, 0, 'resources/title_screen.gif', ancrage='nw')
 
     while True:
@@ -445,11 +454,124 @@ def ecran_titre():
 
         if ev_type == 'ClicGauche':
             if is_bouton_clique(444, 414, 754, 498, ev):
-                return True
+                return True, parametres, mode
             elif is_bouton_clique(445, 530, 754, 616, ev):
-                print('Options')
+                quitter, parametres, mode = menu_options(parametres, mode)
+                if quitter:
+                    return False, parametres, mode
+                efface_tout()
+                image(0, 0, 'resources/title_screen.gif', ancrage='nw')
         elif ev_type == 'Quitte':
-            return False
+            return False, parametres, mode
+
+def menu_options(parametres, mode):
+    
+    while True:
+        # Affichages
+        efface_tout()
+        image(0, 0, 'resources/options.gif', ancrage='nw')
+        affiche_mode(mode)
+        affiche_vitesse_max(parametres[0])
+        affiche_conso(parametres[1])
+        affiche_gravite(parametres[2])
+        affiche_puissance(parametres[3])
+        
+        # Gestion des évènements/commandes
+        ev = attend_ev()
+        ev_type = type_ev(ev)
+
+        if ev_type == 'ClicGauche':
+            # Bouton sortie
+            if is_bouton_clique(447, 708, 758, 794, ev):
+                return False, parametres, mode
+            # Bouton Mode A
+            elif is_bouton_clique(278, 205, 520, 269, ev):
+                mode = 'A'
+            # Bouton Mode B
+            elif is_bouton_clique(679, 207, 921, 271, ev):
+                mode = 'B'
+            # Bouton gauche vitesse max d'alunissage
+            elif is_bouton_clique(294, 320, 355, 381, ev):
+                parametres[0] = selection(parametres[0], [1, 2, 3], 'Left')
+            # Bouton droite vitesse max d'alunissage
+            elif is_bouton_clique(837, 323, 898, 384, ev):
+                parametres[0] = selection(parametres[0], [1, 2, 3], 'Right')
+            # Bouton gauche conso
+            elif is_bouton_clique(296, 408, 357, 469, ev):
+                parametres[1] = selection(parametres[1], [0, 0.5, 1, 2], 'Left')
+            # Bouton droite conso
+            elif is_bouton_clique(835, 411, 896, 472, ev):
+                parametres[1] = selection(parametres[1], [0, 0.5, 1, 2], 'Right')
+            # Bouton gauche gravite
+            elif is_bouton_clique(296, 493, 357, 557, ev):
+                parametres[2] = selection(parametres[2], [-0.03, -0.06, -0.12], 'Left')
+            # Bouton gauche gravite
+            elif is_bouton_clique(835, 496, 893, 557, ev):
+                parametres[2] = selection(parametres[2], [-0.03, -0.06, -0.12], 'Right')
+            # Bouton gauche puissance des propulseurs
+            elif is_bouton_clique(297, 588, 358, 649, ev):
+                parametres[3] = selection(parametres[3], [0.6, 1, 2], 'Left')
+            # Bouton gauche puissances des propulseurs
+            elif is_bouton_clique(834, 591, 895, 652, ev):
+                parametres[3] = selection(parametres[3], [0.6, 1, 2], 'Right')
+        elif ev_type == 'Quitte':
+            return True, parametres, mode
+
+def affiche_mode(mode):
+    if mode == 'A':
+        rectangle(278, 205, 520, 269, remplissage='green')
+        rectangle(679, 207, 921, 271, remplissage='red')
+    else:
+        rectangle(278, 205, 520, 269, remplissage='red')
+        rectangle(679, 207, 921, 271, remplissage='green')
+
+def selection(parametre, choix_possibles, direction):
+    i = choix_possibles.index(parametre)
+
+    if i == 0 and direction == 'Left':
+        return parametre
+    elif i == len(choix_possibles)-1 and direction == 'Right':
+        return parametre
+    elif direction == 'Left':
+        return choix_possibles[i-1]
+    elif direction == 'Right':
+        return choix_possibles[i+1]
+    else:
+        return parametre
+
+def affiche_vitesse_max(vitesse_max_alu):
+    if vitesse_max_alu == 1:
+        image(449, 351, 'resources/indic.gif')
+    elif vitesse_max_alu == 2:
+        image(603, 351, 'resources/indic.gif')
+    else:
+        image(752, 351, 'resources/indic.gif')
+
+def affiche_conso(conso):
+    if conso == 0:
+        image(435, 440, 'resources/indic.gif')
+    elif conso == 0.5:
+        image(549, 440, 'resources/indic.gif')
+    elif conso == 1:
+        image(663, 440, 'resources/indic.gif')
+    else:
+        image(772, 440, 'resources/indic.gif')
+
+def affiche_gravite(gravite):
+    if gravite == -0.03:
+        image(448, 528, 'resources/indic.gif')
+    elif gravite == -0.06:
+        image(603, 528, 'resources/indic.gif')
+    else:
+        image(752, 528, 'resources/indic.gif')
+
+def affiche_puissance(puissance):
+    if puissance == 0.6:
+        image(448, 621, 'resources/indic.gif')
+    elif puissance == 1:
+        image(603, 621, 'resources/indic.gif')
+    else:
+        image(752, 621, 'resources/indic.gif')
 
 def game_over(victoire):
     if victoire:
@@ -477,8 +599,15 @@ if __name__ == '__main__':
 
     # Création de la fenêtre
     cree_fenetre(1200, 800)
+    
+    # Parametres de la partie
+    # 0 -> vitesse max d'alunissage
+    # 1 -> consommation de carburant
+    # 2 -> gravité
+    # 3 -> force des propulseurs
+    parametres = [2, 1, -0.06, 1]
 
-    jouer = ecran_titre()
+    jouer, parametres, mode = ecran_titre()
 
     # Boucle principale
     while jouer:
@@ -489,26 +618,26 @@ if __name__ == '__main__':
         fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
         fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
         fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
-        gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
+        gravite = (0, parametres[2])    # Vecteur accélération de la gravité (x, y)
         propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
         prop_laterale = (0, 0)  # Vecteur accélération de la propulsion latérale (x, y)
         carburant_max = 5*30
         carburant = carburant_max    # Quantité de carburant de la fusée
         terrain = cree_terrain() # Génération du terrain
-        mode = 'A'
         fenetre_fermee = False
         aterri = False
 
+        efface_tout()
+        affiche_fond()
+        affiche_terrain(terrain, False)
         
         # Boucle principale d'une partie
         while not aterri:
             # Affichages
 
-            efface_tout()
-            
+            efface('s')
             affiche_fusee(fusee_pos, fusee_angle)
-            affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max)
-            affiche_terrain(terrain, False)
+            affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max, parametres[0])
 
             # image(50, 50, 'resources/placeholder.gif')
 
@@ -525,29 +654,29 @@ if __name__ == '__main__':
 
             propulsion = (0, 0)
             if touche_pressee('g') and carburant > 0:
-                propulsion = update_propulsion(fusee_angle)
-                carburant -= 1
+                propulsion = update_propulsion(fusee_angle, parametres[3])
+                carburant -= 1*parametres[1]
 
             if mode == 'A' and carburant > 0:
                 if touche_pressee('Left') and touche_pressee('Right'):
                     fusee_accel_angulaire = 0
                 elif touche_pressee('Left'):
-                    fusee_accel_angulaire = update_acceleration_angulaire('Left')
-                    carburant -= 0.5
+                    fusee_accel_angulaire = update_acceleration_angulaire('Left', parametres[3])
+                    carburant -= 0.5*parametres[1]
                 elif touche_pressee('Right'):
-                    fusee_accel_angulaire = update_acceleration_angulaire('Right')
-                    carburant -= 0.5
+                    fusee_accel_angulaire = update_acceleration_angulaire('Right', parametres[3])
+                    carburant -= 0.5*parametres[1]
                 else:
                     fusee_accel_angulaire = 0
             elif carburant > 0:
                 if touche_pressee('Left') and touche_pressee('Right'):
                     prop_laterale = (0, 0)
                 elif touche_pressee('Left'):
-                    prop_laterale = update_propulsion_laterale('Left')
-                    carburant -= 0.5
+                    prop_laterale = update_propulsion_laterale('Left', parametres[3])
+                    carburant -= 0.5*parametres[1]
                 elif touche_pressee('Right'):
-                    prop_laterale = update_propulsion_laterale('Right')
-                    carburant -= 0.5
+                    prop_laterale = update_propulsion_laterale('Right', parametres[3])
+                    carburant -= 0.5*parametres[1]
                 else:
                     prop_laterale = (0, 0)
             # Mécaniques du jeu
@@ -561,7 +690,7 @@ if __name__ == '__main__':
             
             sleep(1/FRAMERATE)
 
-        if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain):
+        if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain, parametres[0]):
             print('Victoire')
             jouer = game_over(True)
         else:
