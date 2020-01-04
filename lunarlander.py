@@ -6,6 +6,8 @@ from upemtk import *
 from math import *
 from time import sleep
 
+from generation_sol import cree_terrain
+
 # Constantes
 VITESSE_MAX = 6
 VITESSE_ANG_MAX = 5
@@ -29,6 +31,11 @@ def affiche_fusee(position, angle):
     polygone(get_coords_fusee(position, angle), remplissage='light blue')
 
 def get_coords_fusee(position, angle):
+    """Renvoie les coordonnées des 4 coins de la fusée
+    :param position: tuple, coordonnées x, y de la fusée
+    :param angle: float, angle de la fusée
+    :return value: liste de tuples
+    """
     x0, y0 = position
     
     x1 = cos(radians(-angle) - atan(1/2)) * hypot(40, 20) / 2
@@ -42,7 +49,7 @@ def get_coords_fusee(position, angle):
 
 def affiche_terrain(terrain):
     """Affiche le terrain"""
-    polygone(terrain+[(1200, 800), (0, 800)], remplissage='brown')
+    polygone(terrain+[(1200, 800), (0, 800)], remplissage='grey')
 
 def affiche_infos():
     """Affiche une barre en bas de l'écran affichant un certain nombre d'informations"""
@@ -54,7 +61,7 @@ def gen_terrain():
     """
     terrain = []
     for i in range(61):
-        terrain.append((i*20, 700+cos(i)*50))
+        terrain.append((i*20, 700))
     return terrain
 
 def update_propulsion(angle):
@@ -149,9 +156,20 @@ def move_fusee(fusee, vitesse):
     return (new_x, new_y)
 
 def direction(p1, p2, p3):
+    """Evalue l'orientation du point p3 par rapport au segment (p1, p2)
+    :param p1: tuple
+    :param p2: tuple
+    :param p3: tuple
+    :return float:
+    """
     return (p2[1] - p1[1]) * (p3[0] - p2[0]) - (p2[0] - p1[0]) * (p3[1] - p2[1])
 
 def segments_croise(seg1, seg2):
+    """Evalue si deux segments se croisent
+    :param seg1: liste de 2 tuples, correspondant aux coordonnées des 2 points formant le segment 1
+    :param seg2: liste de 2 tuples, correspondant aux coordonnées des 2 points formant le segment 2
+    :return bool:
+    """
     p1, p2 = seg1
     p3, p4 = seg2
 
@@ -162,9 +180,15 @@ def segments_croise(seg1, seg2):
     return False
     
 def check_gnd_collision(fusee, angle, terrain):
-    """Prototype. Vérifie une éventuelle collision avec un sol plat fixe"""
+    """Recherche une collision entre la fusée et le terrain
+    :param fusee: tuple, position x,y de la fusée
+    :param angle: float, angle de la fusée
+    :param terrain: liste de tuples
+    :return bool:
+    """
     x0, y0 = fusee
 
+    # Recherche d'une collision avec le segment directement sous la fusée
     i = cherche_segment_plus_proche(x0)
     seg = (terrain[i], terrain[i+1])
 
@@ -179,6 +203,7 @@ def check_gnd_collision(fusee, angle, terrain):
     elif segments_croise((coords[3], coords[0]), seg):
         return True
 
+    # Recherche d'une collision avec le segment à gauche
     if i > 0:
         seg = (terrain[i-1], terrain[i])
         if segments_croise((coords[0], coords[1]), seg):
@@ -190,6 +215,7 @@ def check_gnd_collision(fusee, angle, terrain):
         elif segments_croise((coords[3], coords[0]), seg):
             return True
 
+    # Recherche d'une collision avec le segment à droite
     if i < 60:
         seg = (terrain[i+1], terrain[i+2])
         if segments_croise((coords[0], coords[1]), seg):
@@ -201,11 +227,43 @@ def check_gnd_collision(fusee, angle, terrain):
         elif segments_croise((coords[3], coords[0]), seg):
             return True
 
-
     return False
 
 def cherche_segment_plus_proche(x):
+    """Renvoie l'indice désignant le premier point du segment de terrain
+    directement sous la fusée
+    :param x: float, position x de la fusée
+    :return int:
+    """
     return int(x)//20
+
+def check_victoire(position, angle, vitesse, terrain):
+    """Evalue si l'atterrissage est correct
+    :param position: tuple, position x, y de la fusée
+    :param angle: float, angle de la fusée
+    :param vitesse: tuple, vecteur vitesse de la fusée
+    :param terrain: liste de tuples
+    :return bool:
+    """
+    x, y = position
+    vx, vy = vitesse
+    
+    i = cherche_segment_plus_proche(position[0])
+    sol = (terrain[i], terrain[i+1])
+    p1, p2 = sol
+    x0, y0 = p1
+    x1, y1 = p2
+
+    inter = fabs(x1-x)/fabs(x1-x0)*fabs(y0-y1)
+    y_sol = min(y0, y1)-inter
+
+    if y - y_sol < 25:
+        if fabs(degrees(atan(fabs(y0-y1)/fabs(x0-x1)))) <= 5:
+            if fabs(angle-90) <= 5:
+                if hypot(vx, vy) < 2:
+                    return True
+
+    return False
 
 if __name__ == '__main__':
 
@@ -213,16 +271,16 @@ if __name__ == '__main__':
     cree_fenetre(1200, 800)
 
     # Initialisation des variables principales
-    fusee_pos = (200, 0)    # Position de la fusee (x, y)
+    fusee_pos = (600, 150)    # Position de la fusee (x, y)
     fusee_angle = 90        # Angle en degrés de la fusée
     fusee_vit = (0, -1)     # Vecteur vitesse de la fusee (x, y)
     fusee_vit_angulaire = 0 # Vitesse angulaire de la fusée
     fusee_accel_angulaire = 0 # Accélération angulaire de la fusée
     gravite = (0, -0.06)    # Vecteur accélération de la gravité (x, y)
     propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
-    carburant = 5 * 30      # Quantité de carburant de la fusée
-    terrain = gen_terrain()
-
+    carburant = 10 * 30     # Quantité de carburant de la fusée
+    terrain = gen_terrain() # Génération du terrain
+    
     jouer = True
 
     
@@ -243,7 +301,8 @@ if __name__ == '__main__':
         ev_type = type_ev(ev)
 
         if ev_type == 'Quitte':
-            jouer = False
+            ferme_fenetre()
+            break
 
         propulsion = (0, 0)
         if touche_pressee('g') and carburant > 0:
@@ -270,6 +329,10 @@ if __name__ == '__main__':
         
         sleep(1/FRAMERATE)
 
+    if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain):
+        print('Victoire')
+    else:
+        print('Defeat')
     attend_ev()
 
     # Fermeture de la fenêtre
