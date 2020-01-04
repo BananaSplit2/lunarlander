@@ -54,7 +54,7 @@ def gen_terrain():
     """
     terrain = []
     for i in range(61):
-        terrain.append((i*20, 700))
+        terrain.append((i*20, 700+cos(i)*50))
     return terrain
 
 def update_propulsion(angle):
@@ -148,44 +148,27 @@ def move_fusee(fusee, vitesse):
     
     return (new_x, new_y)
 
+def direction(p1, p2, p3):
+    return (p2[1] - p1[1]) * (p3[0] - p2[0]) - (p2[0] - p1[0]) * (p3[1] - p2[1])
+
 def segments_croise(seg1, seg2):
     p1, p2 = seg1
     p3, p4 = seg2
 
-    if p1[0]-p2[0] != 0:
-        a1 = (p1[1]-p2[1]) / (p1[0]-p2[0])
-        b1 = 1
-        c1 = p1[1] - a1 * p1[0]
-    else:
-        a1 = 1
-        b1 = 0
-        c1 = -p1[0]
-
-    if p3[0]-p4[0] != 0:
-        a2 = (p3[1]-p4[1]) / (p3[0]-p4[0])
-        b2 = 1
-        c2 = p3[1] - a2 * p3[0]
-    else:
-        a2 = 1
-        b2 = 0
-        c2 = -p3[0]
-
-    if (a1 * p3[0] - b1 * p3[1] + b1) * (a1 * p4[0] - b2 * p4[1] + b1) <= 0:
-        return True
+    if direction(p1, p2, p3) * direction(p1, p2, p4) < 0:
+        if direction(p3, p4, p1) * direction(p3, p4, p2) < 0:
+            return True
+    
     return False
-
-def check_gnd_collision(fusee, vitesse, angle, terrain):
+    
+def check_gnd_collision(fusee, angle, terrain):
     """Prototype. Vérifie une éventuelle collision avec un sol plat fixe"""
     x0, y0 = fusee
-    vx, vy = vitesse
-    nx = x0 + vx
-    ny = y0 - vy
 
-    seg = cherche_segment_plus_proche(nx, terrain)
-    print(seg)
+    i = cherche_segment_plus_proche(x0)
+    seg = (terrain[i], terrain[i+1])
 
     coords = get_coords_fusee(fusee, angle)
-    print(coords)
 
     if segments_croise((coords[0], coords[1]), seg):
         return True
@@ -196,10 +179,33 @@ def check_gnd_collision(fusee, vitesse, angle, terrain):
     elif segments_croise((coords[3], coords[0]), seg):
         return True
 
+    if i > 0:
+        seg = (terrain[i-1], terrain[i])
+        if segments_croise((coords[0], coords[1]), seg):
+            return True
+        elif segments_croise((coords[1], coords[2]), seg):
+            return True
+        elif segments_croise((coords[2], coords[3]), seg):
+            return True
+        elif segments_croise((coords[3], coords[0]), seg):
+            return True
+
+    if i < 60:
+        seg = (terrain[i+1], terrain[i+2])
+        if segments_croise((coords[0], coords[1]), seg):
+            return True
+        elif segments_croise((coords[1], coords[2]), seg):
+            return True
+        elif segments_croise((coords[2], coords[3]), seg):
+            return True
+        elif segments_croise((coords[3], coords[0]), seg):
+            return True
+
+
     return False
 
-def cherche_segment_plus_proche(x, terrain):
-    return (terrain[int(x)//20], terrain[int(x)//20+1])
+def cherche_segment_plus_proche(x):
+    return int(x)//20
 
 if __name__ == '__main__':
 
@@ -243,7 +249,6 @@ if __name__ == '__main__':
         if touche_pressee('g') and carburant > 0:
             propulsion = update_propulsion(fusee_angle)
             carburant -= 1
-            print(carburant)
 
         if touche_pressee('Left') and touche_pressee('Right'):
             fusee_accel_angulaire = 0
@@ -260,10 +265,12 @@ if __name__ == '__main__':
         fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion)
         fusee_pos = move_fusee(fusee_pos, fusee_vit)
 
-        if check_gnd_collision(fusee_pos, fusee_vit, fusee_angle, terrain):
+        if check_gnd_collision(fusee_pos, fusee_angle, terrain):
             jouer = False
         
         sleep(1/FRAMERATE)
+
+    attend_ev()
 
     # Fermeture de la fenêtre
     ferme_fenetre()

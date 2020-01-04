@@ -3,8 +3,8 @@
 
 ☑ Joueur contrôle réacteur principal et propulseurs latéraux
 
+☑ Collision avec le sol gérée
 ☒ Victoire si : fusée posée perpendiculairement au sol, sur une surface horizontale et régulière, à faible vitesse
-
 ☒ Défaite si : zone non horizontale/plane, fusée non verticale, vitesse trop élevée
 
 ☑ Carburant limité
