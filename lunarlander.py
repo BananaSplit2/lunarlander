@@ -6,6 +6,7 @@ from upemtk import *
 from math import *
 from time import sleep
 from random import randint
+from random import shuffle
 from operator import add
 
 # Constantes
@@ -381,58 +382,86 @@ def cree_terrain() :
     points_terrain.append((x_base, y_base))
     
     
-    type_terrain = ['plat','colline','descendant','montant']
-    for i in range (12) :
-        x = randint(0,3) 
-        terrain = type_terrain[x]
+    type_terrain = ['plat','colline','descendant','montant','plat','descendant','montant','descendant','montant','descendant','montant','plat','descendant','montant','plat','descendant','montant','descendant','montant','descendant','montant','plat']
+    shuffle(type_terrain)
+    i = 0
+    while len(points_terrain) <= 61 :
+        terrain = type_terrain[0]
+        type_terrain.remove(terrain)
+        type_terrain.append(terrain)
+        i += 1
+        if i % len(type_terrain)  == 0 :
+            shuffle(type_terrain)
+            
         if terrain == 'plat' :
-            for i in range (5) :
+            long_seg = randint(1,2)
+            for i in range(long_seg) :
                 x = points_terrain[-1]
                 x = tuple(map(add, x, (20,0)))
                 points_terrain.append(x)
                 
+                    
         elif terrain == 'colline' :
-            for i in range (3) :
+            long_seg = randint(3,5)
+            for i in range (long_seg):
                 x = points_terrain[-1]
-                
-                x = tuple(map(add, x, (20,-2)))
-                a, b = x
-                if b < 700 :
-                    pass
-                else :
-                    points_terrain.append(x)
-            for i in range (2) :
+                angle = randint(15,25)
+                x = tuple(map(add, x,(20,-angle)))
+                points_terrain.append(x)
+            
+            long_seg = randint(2,4)
+            for i in range (long_seg) :
                 x = points_terrain[-1]
+                angle = randint(20,30)
+                x = tuple(map(add,x, (20, -20)))
+                points_terrain.append(x)
+            
+            
+            x = points_terrain[-1]
+            x = tuple(map(add, x, (20, -10)))
+            points_terrain.append(x)
                 
-                x = tuple(map(add, x, (20,2)))
-                a, b = x
-                if b > 795 :
-                    pass
-                else :
-                    points_terrain.append(x)
-                
+            x = points_terrain[-1]
+            x = tuple(map(add, x, (20, 10)))
+            points_terrain.append(x)
+            
+            long_seg = randint(2,3)
+            for i in range (long_seg) :
+                x = points_terrain[-1]
+                angle = randint(20,30)
+                x = tuple(map(add,x, (20, angle)))
+                points_terrain.append(x)
+            
+            long_seg = randint(2,4)
+            for i in range (long_seg):
+                x = points_terrain[-1]
+                angle = randint(15,25)
+                x = tuple(map(add, x,(20,angle)))
+                points_terrain.append(x)
+            
         elif terrain == 'descendant' :
-            for i in range (5) :
+            long_seg = randint(1,3)
+            for i in range(long_seg) :
+                angle = randint(5,15)
                 x = points_terrain[-1]
-                
-                x = tuple(map(add, x, (20 ,5)))	
+                x = tuple(map(add, x, (20 ,angle)))	
                 a, b = x
-                if b > 795 :
+                if b > 750 :
                     pass
                 else :
                     points_terrain.append(x)
                 
-        elif terrain == 'montant' :
-            for i in range (5) :
+        elif terrain == 'montant' :	
+            long_seg = randint(1,3)
+            for i in range(long_seg) :
                 x = points_terrain[-1]
-                
-                x = tuple(map(add, x, (20,-5)))	
+                angle = randint(5,15)
+                x = tuple(map(add, x, (20,-angle)))	
                 a, b = x
-                if b < 700 :
+                if b < 625 :
                     pass
                 else :
                     points_terrain.append(x)
-    print(len(points_terrain))
     return points_terrain
 
 def is_bouton_clique(x1, y1, x2, y2, ev):
@@ -595,6 +624,16 @@ def game_over(victoire):
         elif ev_type == 'Quitte':
             return False
 
+def pause():
+    """Met le jeu en pause"""
+    image(600, 300, 'resources/pause.gif', ancrage='center', tag='p')
+    while True:
+        ev = attend_ev()
+        if ev_type == 'Touche':
+            if touche(ev) == 'p':
+                efface('p')
+                break
+
 if __name__ == '__main__':
 
     # Création de la fenêtre
@@ -627,6 +666,7 @@ if __name__ == '__main__':
         fenetre_fermee = False
         aterri = False
 
+        # Affichages permanents
         efface_tout()
         affiche_fond()
         affiche_terrain(terrain, False)
@@ -650,7 +690,10 @@ if __name__ == '__main__':
                 fenetre_fermee = True
                 ferme_fenetre()
                 break
-
+            elif ev_type == 'Touche':
+                if touche(ev) == 'p':
+                    pause()
+            
             propulsion = (0, 0)
             if touche_pressee('g') and carburant > 0:
                 propulsion = update_propulsion(fusee_angle, parametres[3])
@@ -678,17 +721,21 @@ if __name__ == '__main__':
                     carburant -= 0.5*parametres[1]
                 else:
                     prop_laterale = (0, 0)
-            # Mécaniques du jeu
+            
+            # Gestion de la physique de la fusée
             fusee_vit_angulaire = update_vitesse_angulaire(fusee_vit_angulaire, fusee_accel_angulaire)
             fusee_angle = update_angle(fusee_angle, fusee_vit_angulaire)
             fusee_vit = update_vitesse(fusee_pos, fusee_vit, gravite, propulsion, prop_laterale)
             fusee_pos = move_fusee(fusee_pos, fusee_vit)
 
+            # Vérification d'une collision avec le sol
             if check_gnd_collision(fusee_pos, fusee_angle, terrain):
                 aterri = True
 
+            # Contrôle du temps
             sleep(1/FRAMERATE)
 
+        # Vérification des conditions de victoire
         if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain, parametres[0]):
             print('Victoire')
             jouer = game_over(True)
