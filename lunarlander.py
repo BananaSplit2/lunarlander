@@ -621,9 +621,9 @@ if __name__ == '__main__':
         gravite = (0, parametres[2])    # Vecteur accélération de la gravité (x, y)
         propulsion = (0, 0)     # Vecteur accélération de la propulsion (x, y)
         prop_laterale = (0, 0)  # Vecteur accélération de la propulsion latérale (x, y)
-        carburant_max = 5*30
-        carburant = carburant_max    # Quantité de carburant de la fusée
-        terrain = cree_terrain() # Génération du terrain
+        carburant_max = 5*30    # Quantité de carburant initiale
+        carburant = carburant_max   # Quantité de carburant de la fusée
+        terrain = cree_terrain()    # Génération du terrain
         fenetre_fermee = False
         aterri = False
 
@@ -639,9 +639,8 @@ if __name__ == '__main__':
             affiche_fusee(fusee_pos, fusee_angle)
             affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max, parametres[0])
 
-            # image(50, 50, 'resources/placeholder.gif')
-
             mise_a_jour()
+
 
             # Gestion des évènements/commandes
             ev = donne_ev()
@@ -687,7 +686,7 @@ if __name__ == '__main__':
 
             if check_gnd_collision(fusee_pos, fusee_angle, terrain):
                 aterri = True
-            
+
             sleep(1/FRAMERATE)
 
         if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain, parametres[0]):
