@@ -64,7 +64,7 @@ def affiche_terrain(terrain, points):
         for x, y in terrain:
             cercle(x, y, 5, remplissage='blue')
 
-def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max, vitesse_max_alu):
+def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max, vitesse_max_alu, timer, score):
     """Affiche une barre en bas de l'écran affichant un certain nombre d'informations
     :param position: tuple, position x,y de la fusée
     :param angle: float, angle de la fusée
@@ -78,6 +78,8 @@ def affiche_infos(position, angle, vitesse, terrain, carburant, carburant_max, v
     affiche_vecteur_vitesse(vitesse, vitesse_max_alu)
     affiche_altitude(position, angle, terrain)
     affiche_carburant(carburant, carburant_max)
+    affiche_temps(timer)
+    affiche_score(score)
 
 def affiche_vecteur_vitesse(vitesse, vitesse_max_alu):
     """Affichage du vecteur vitesse dans la barre d'informations
@@ -121,6 +123,34 @@ def affiche_carburant(carburant, carburant_max):
     texte(360, 15, 'Carburant', ancrage='center', couleur='white', taille=14, tag='s')
     rectangle(350, 90, 370, 90-60*carburant/carburant_max, remplissage='red', tag='s')
     rectangle(350, 90, 370, 90-60, couleur='white', tag='s')
+
+def affiche_temps(timer):
+    """Affiche le temps passé
+    :param timer: int
+    """
+    temps = timer // 30
+    secondes = temps % 60
+    minutes = temps // 60
+
+    if secondes < 10:
+        s_sec = '0' + str(secondes)
+    else:
+        s_sec = str(secondes)
+
+    if minutes < 10:
+        s_min = '0' + str(minutes)
+    else:
+        s_min = str(minutes)
+
+    texte(460, 30, 'Temps', couleur='white', ancrage='w', taille=14, tag='s')
+    texte(460, 60, s_min + ':' + s_sec, couleur='white', ancrage='w', taille=20, tag='s')
+
+def affiche_score(score):
+    """Affiche le score
+    :param score: int
+    """
+    texte(560, 30, 'Score', couleur='white', ancrage='w', taille=14, tag='s')
+    texte(560, 60, str(score), couleur='white', ancrage='w', taille=20, tag='s')
 
 def affiche_explosion(position):
     """Affiche une image d'explosion à la position indiquée
@@ -341,7 +371,7 @@ def check_victoire(position, angle, vitesse, terrain, vitesse_max_alu):
     x1, y1 = p2
 
     # Evalue si la fusée est bien sur le sol
-    if get_altitude(position, angle, terrain) < 25:
+    if get_altitude(position, angle, terrain) < 23:
         # Evalue si le sol est suffisamment plat
         if fabs(degrees(atan(fabs(y0-y1)/fabs(x0-x1)))) <= 5:
             # Evalue si la fusée est suffisament verticale
@@ -380,31 +410,45 @@ def get_altitude(position, angle, terrain):
     return y_sol-max(liste_y)
 
 def cree_terrain() :
-    x_base = 0
+    """Renvoie la  liste des points nécessaires pour créer le polgone formant le sol
+    :return list de tuples:
+    """
+    # Initialisation des coordonées du premier point et création de la liste
+    x_base = 0     
     y_base = 750
     points_terrain = []
     points_terrain.append((x_base, y_base))
     
-    
+    # Création d'une liste permettant de tirer aléatoirement le type de sol à afficher
     type_terrain = ['plat','colline','descendant','montant','plat','descendant','montant','descendant','montant','descendant','montant','plat','descendant','montant','plat','descendant','montant','descendant','montant','descendant','montant','plat']
     shuffle(type_terrain)
+    
+    # Initialisation de l'itération permettant de savoir quand tout les elements de type_terrain sont utilisés
     i = 0
+    
+    # Boucle fonctionnant temps qu'il n'y a pas 61 points dans la liste
     while len(points_terrain) <= 61 :
+        # On choisi le prochain terrain qui sera ajouté, puis on le retire la liste type_terrain pour  
+        # le rajouter en dernier, créant un roulement qui s'arrète quand chaque element est passé une fois
         terrain = type_terrain[0]
         type_terrain.remove(terrain)
         type_terrain.append(terrain)
         i += 1
+        
+        # Quand chaque élément est passé une fois, la liste est de nouveau rangée aléatoirement
         if i % len(type_terrain)  == 0 :
             shuffle(type_terrain)
-            
+        # Si le terrain choisi est plat rajoute un/deux points avec 20 px de plus sur les abscisses par rapport au point précédent  
         if terrain == 'plat' :
             long_seg = randint(1,2)
             for i in range(long_seg) :
                 x = points_terrain[-1]
                 x = tuple(map(add, x, (20,0)))
                 points_terrain.append(x)
-            
+                
+        # Si le terrain choisi est colline, nous placons plusieurs points en forme de dome
         elif terrain == 'colline' :
+            
             long_seg = randint(3,5)
             for i in range (long_seg):
                 x = points_terrain[-1]
@@ -418,6 +462,7 @@ def cree_terrain() :
                 angle = randint(20,30)
                 x = tuple(map(add,x, (20, -20)))
                 points_terrain.append(x)
+            
             
             x = points_terrain[-1]
             x = tuple(map(add, x, (20, -10)))
@@ -440,7 +485,7 @@ def cree_terrain() :
                 angle = randint(15,25)
                 x = tuple(map(add, x,(20,angle)))
                 points_terrain.append(x)
-            
+        # Si le terrain choisi est de type descente on place 1 à 3 points avec des ordonnées supérieures au point précédent
         elif terrain == 'descendant' :
             long_seg = randint(1,3)
             for i in range(long_seg) :
@@ -452,7 +497,7 @@ def cree_terrain() :
                     pass
                 else :
                     points_terrain.append(x)
-                
+        # Si le terrain choisi est de type descente on place 1 à 3 points avec des ordonnées infériereures au point précédent
         elif terrain == 'montant' :	
             long_seg = randint(1,3)
             for i in range(long_seg) :
@@ -464,6 +509,9 @@ def cree_terrain() :
                     pass
                 else :
                     points_terrain.append(x)
+    # On rajoute deux dernières coordonnées afin d'avoir un polygone couvrant l'espace voulu
+    points_terrain.append((1200,800))
+    points_terrain.append((0,800))
     return points_terrain
 
 def is_bouton_clique(x1, y1, x2, y2, ev):
@@ -691,6 +739,8 @@ if __name__ == '__main__':
     # 2 -> gravité
     # 3 -> force des propulseurs
     parametres = [2, 1, -0.06, 1]
+    
+    score = 0
 
     jouer, parametres, mode = ecran_titre()
 
@@ -711,6 +761,7 @@ if __name__ == '__main__':
         terrain = cree_terrain()    # Génération du terrain
         fenetre_fermee = False
         aterri = False
+        timer = 0
 
         # Affichages permanents
         efface_tout()
@@ -723,7 +774,7 @@ if __name__ == '__main__':
 
             efface('s')
             affiche_fusee(fusee_pos, fusee_angle)
-            affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max, parametres[0])
+            affiche_infos(fusee_pos, fusee_angle, fusee_vit, terrain, carburant, carburant_max, parametres[0], timer, score)
 
             mise_a_jour()
 
@@ -778,16 +829,20 @@ if __name__ == '__main__':
             if check_gnd_collision(fusee_pos, fusee_angle, terrain):
                 aterri = True
 
+            timer += 1
+
             # Contrôle du temps
             sleep(1/FRAMERATE)
 
         # Vérification des conditions de victoire
         if check_victoire(fusee_pos, fusee_angle, fusee_vit, terrain, parametres[0]):
             print('Victoire')
+            score += 1
             jouer = game_over(True)
         else:
             affiche_explosion(fusee_pos)
             print('Defeat')
+            score = 0
             jouer = game_over(False)
 
     # Fermeture de la fenêtre

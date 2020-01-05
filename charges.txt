@@ -17,7 +17,7 @@
 ☑ - propulseurs latéraux sans rotation
 ☑ - propulseurs latéraux avec rotation
 
-☒ Génération aléatoire du terrain, garantissant une surface d'atterissage viable
+☑ Génération aléatoire du terrain, garantissant une surface d'atterissage viable
 
 ☑ Interface permettant de démarrer le jeu, recommencer en cas d'échec ou de réussite, et permettant de quitter le jeu
 
