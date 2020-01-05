@@ -1,5 +1,7 @@
 '''
-Prototype Lunar Lander
+Jeu Lunar Lander
+Auteurs : Clément Gaudet et Thibault Viallar
+S1 2019-2020 L1 Math Info UPEM
 '''
 
 from upemtk import *
@@ -32,10 +34,11 @@ def affiche_fusee(position, angle):
     polygone(get_coords_fusee(position, angle), remplissage='light blue', tag='s')
 
 def get_coords_fusee(position, angle):
-    """Renvoie les coordonnées des 4 coins de la fusée
+    """Renvoie les coordonnées des 4 coins de la fusée en sa basant sur les
+    coordonnées de son centre et son angle
     :param position: tuple, coordonnées x, y de la fusée
     :param angle: float, angle de la fusée
-    :return value: liste de tuples
+    :return value: liste de tuples, chaque tuple étant les coordonnées x, y d'un point
     """
     x0, y0 = position
     
@@ -48,6 +51,7 @@ def get_coords_fusee(position, angle):
     return [(x0+x1, y0+y1), (x0+x2, y0+y2), (x0-x1, y0-y1), (x0-x2, y0-y2)]
 
 def affiche_fond():
+    """Affiche le background"""
     image(0, 0, 'resources/bg.gif', ancrage='nw')
 
 def affiche_terrain(terrain, points):
@@ -161,7 +165,7 @@ def update_vitesse(fusee, vitesse, gravite, propulsion, prop_laterale):
 def update_acceleration_angulaire(touche, puiss):
     """Met à jour l'accélération angulaire selon la touche pressée
     :param touche: string, touche du clavier appuyée
-    :param puiss: float, ratio de la puissance des réacteurx latéraux
+    :param puiss: float, ratio de la puissance des réacteurs latéraux
     :return float: accélération angulaire
     """
     if touche == 'Left':
@@ -399,8 +403,7 @@ def cree_terrain() :
                 x = points_terrain[-1]
                 x = tuple(map(add, x, (20,0)))
                 points_terrain.append(x)
-                
-                    
+            
         elif terrain == 'colline' :
             long_seg = randint(3,5)
             for i in range (long_seg):
@@ -415,7 +418,6 @@ def cree_terrain() :
                 angle = randint(20,30)
                 x = tuple(map(add,x, (20, -20)))
                 points_terrain.append(x)
-            
             
             x = points_terrain[-1]
             x = tuple(map(add, x, (20, -10)))
@@ -465,12 +467,24 @@ def cree_terrain() :
     return points_terrain
 
 def is_bouton_clique(x1, y1, x2, y2, ev):
+    """Renvoie True si un clic de souris se trouve dans un rectangle dans les coordonnées
+    du points supérieur gauche et inférieur droit sont donnés en arguments
+    :param x1: int
+    :param y1: int
+    :param x2: int
+    :param y2: int
+    :param ev: tuple
+    :return bool:
+    """
+    
     if x1 <= abscisse(ev) <= x2:
         if y1 <= ordonnee(ev) <= y2:
             return True
     return False
 
 def ecran_titre():
+    """Affiche et gère les évènements sur l'écran titre
+    :return tuple:"""
     parametres = [2, 1, -0.06, 1]
     mode = 'A'
     quitter = False
@@ -494,7 +508,11 @@ def ecran_titre():
             return False, parametres, mode
 
 def menu_options(parametres, mode):
-    
+    """Affiche et gère les évènements sur le menu des options
+    :param parametres: liste
+    :param mode: str
+    :return tuple:
+    """
     while True:
         # Affichages
         efface_tout()
@@ -547,6 +565,9 @@ def menu_options(parametres, mode):
             return True, parametres, mode
 
 def affiche_mode(mode):
+    """Affiche les boutons pour choisir le mode dans le menu des options
+    :param mode: str
+    """
     if mode == 'A':
         rectangle(278, 205, 520, 269, remplissage='green')
         rectangle(679, 207, 921, 271, remplissage='red')
@@ -555,6 +576,13 @@ def affiche_mode(mode):
         rectangle(679, 207, 921, 271, remplissage='green')
 
 def selection(parametre, choix_possibles, direction):
+    """Permet de parcourir une liste de choix possibles vers la gauche
+    ou vers la droite
+    :param parametre: valeur actuelle du parametre
+    :param choix_possibles: liste des valeurs pouvant être prises par le parametre
+    :param direction: str, 'Left' ou 'Right', indiquant la direction dans laquelle aller dans la liste
+    :return:
+    """
     i = choix_possibles.index(parametre)
 
     if i == 0 and direction == 'Left':
@@ -569,6 +597,10 @@ def selection(parametre, choix_possibles, direction):
         return parametre
 
 def affiche_vitesse_max(vitesse_max_alu):
+    """Affiche le slider indiquant la vitesse max choisie dans le
+    menu des options
+    :param vitesse_max_alu: int
+    """
     if vitesse_max_alu == 1:
         image(449, 351, 'resources/indic.gif')
     elif vitesse_max_alu == 2:
@@ -577,6 +609,9 @@ def affiche_vitesse_max(vitesse_max_alu):
         image(752, 351, 'resources/indic.gif')
 
 def affiche_conso(conso):
+    """Affiche le slider indiquant la consommation de carburant choisie
+    dans le menu des options
+    :param conso: float"""
     if conso == 0:
         image(435, 440, 'resources/indic.gif')
     elif conso == 0.5:
@@ -587,6 +622,9 @@ def affiche_conso(conso):
         image(772, 440, 'resources/indic.gif')
 
 def affiche_gravite(gravite):
+    """Affiche le slider indiquant la gravité choisie dans le menu des
+    options
+    :param gravite: float"""
     if gravite == -0.03:
         image(448, 528, 'resources/indic.gif')
     elif gravite == -0.06:
@@ -595,6 +633,10 @@ def affiche_gravite(gravite):
         image(752, 528, 'resources/indic.gif')
 
 def affiche_puissance(puissance):
+    """Affiche le slider indiquant la puissance choisie pour les
+    réacteurs dans le menu des options
+    :param puissance: float
+    """
     if puissance == 0.6:
         image(448, 621, 'resources/indic.gif')
     elif puissance == 1:
@@ -603,6 +645,10 @@ def affiche_puissance(puissance):
         image(752, 621, 'resources/indic.gif')
 
 def game_over(victoire):
+    """Affiche l'écran de game over and propose au joueur de rejouer
+    :param victoire: bool, True si l'atterrissage était réussi
+    :return bool: True si on continue de jouer
+    """
     if victoire:
         image(600, 300, 'resources/alunissage.gif', ancrage='center')
     else:
